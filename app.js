@@ -14,6 +14,16 @@ var  budgetController = (function() {
     this.value = value;
   };
 
+  var calculateTotal = function(type) {
+    var sum = 0;
+
+    data.allItems[type].forEach(function(cur) {
+      sum += cur.value;
+    });
+
+    data.totals[type] = sum;
+  };
+
   var data = {
     allItems: {
       exp: [],
@@ -22,7 +32,9 @@ var  budgetController = (function() {
     totals: {
       exp: 0,
       inc: 0
-    }
+    },
+    budget: 0,
+    percentage: -1
   };
 
   return {
@@ -50,6 +62,20 @@ var  budgetController = (function() {
       return newItem;
 
     },
+
+    calculateBudget: function() {
+      // Calculate total income and expanses
+      calculateTotal('exp');
+      calculateTotal('inc');
+
+      // Calculate the budget: income - expanses
+      data.budget = data.totals.inc - data.totals.exp;
+
+      // Calculate the percentage of income that we spent
+      data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
+    },
+
+
 
     testing: function() {
       console.log(data);
@@ -138,6 +164,7 @@ var controller = (function(budgetCtrl, UICtrl) {
 
   var updateBudget = function() {
     // 1. Calculate the budget
+    budgetCtrl.calculateBudget();
 
     // 2. Return the budget
 
@@ -151,17 +178,20 @@ var controller = (function(budgetCtrl, UICtrl) {
     // 1. Get the field input data
     input = UICtrl.getInput();
 
-    // 2. Add item to the budget controller
-    newItem = budgetCtrl.addItem(input.type, input.description, input.value);
+    if (input.description !== '' && !isNan(input.value) && input.value > 0) {
 
-    // 3. Add new item to the IU
-    UICtrl.addListItem(newItem, input.type);
+      // 2. Add item to the budget controller
+      newItem = budgetCtrl.addItem(input.type, input.description, input.value);
 
-    // 4. Clear the fields
-    UICtrl.clearFields();
+      // 3. Add new item to the IU
+      UICtrl.addListItem(newItem, input.type);
 
-    // 5. Calculate and update budget
-    updateBudget();
+      // 4. Clear the fields
+      UICtrl.clearFields();
+
+      // 5. Calculate and update budget
+      updateBudget();
+    }
   };
 
   return {
